@@ -7,11 +7,11 @@ use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
 use std::collections::HashMap;
-use crate::core;
-use crate::core::package::Package;
+use crate::common;
+use crate::common::package::LibPackage;
 
 pub struct PythonScanner {
-    pub package_groups: HashMap<String, Vec<core::package::Package>>,
+    pub package_groups: HashMap<String, Vec<common::package::LibPackage>>,
     scan_files: Vec<DirEntry>,
 }
 
@@ -24,8 +24,8 @@ impl PythonScanner {
     }
 }
 
-impl core::scanner::Scanner for PythonScanner {
-    fn run(mut self) -> HashMap<String,Vec<Package>> {
+impl common::scanner::LibScannerExt for PythonScanner {
+    fn run(mut self) -> HashMap<String,Vec<LibPackage>> {
         let metadata_files: Vec<DirEntry> = self.scan_files
             .clone()
             .into_iter()
@@ -34,7 +34,7 @@ impl core::scanner::Scanner for PythonScanner {
 
         for entry in metadata_files.iter() {
             // parse package version and name
-            let mut e = core::package::Package::new(core::package::PackageType::Python);
+            let mut e = common::package::LibPackage::new(common::package::LibType::Python);
             let (name, version) = parse_py_metadata_file(&entry);
             e = e.with_version(version);
             e = e.with_name(name);
