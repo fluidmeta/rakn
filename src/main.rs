@@ -37,14 +37,11 @@ fn main() {
     let mut excluded_dirs:Vec<String>= Vec::new();
     if let Some(excluded) = matches.values_of("exclude") {
         for exclude in excluded.into_iter() {
-            excluded_dirs.push(
-                String::from(fs::canonicalize(PathBuf::from(exclude))
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_string()
-                )
-            );
+            let os_dir = fs::canonicalize(PathBuf::from(exclude));
+            match os_dir {
+                Ok(os_dir) => excluded_dirs.push(String::from(os_dir.to_str().unwrap())),
+                _ => (),
+            }
         }
     }
 
