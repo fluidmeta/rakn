@@ -4,10 +4,10 @@ extern crate regex;
 
 use walkdir::{WalkDir, DirEntry};
 use clap::{Arg, App};
-use crate::core::scanner::Scanner;
+use crate::common::scanner::LibScannerExt;
 
 mod scanner;
-mod core;
+mod common;
 mod report;
 
 fn main() {
@@ -34,12 +34,15 @@ fn main() {
         .filter_map(|v| v.ok())
         .collect();
 
+    // basic host info
+    let os_info = scanner::osinfo::OSInfo::new();
+
     // scan files for python packages
     let py_scan = scanner::python::PythonScanner::new(metadata_files);
     let py_package_groups = py_scan.run();
 
     // print vuls.io report
-    let vulsio_report = report::vulsio::VulsIOReport::new(py_package_groups);
+    let vulsio_report = report::vulsio::VulsIOReport::new(os_info, py_package_groups);
     let json_str = serde_json::to_string_pretty(&vulsio_report).unwrap();
     println!("{}", json_str);
 

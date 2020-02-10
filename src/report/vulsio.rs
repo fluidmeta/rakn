@@ -1,8 +1,7 @@
 use serde::Serialize;
 use std::collections::HashMap;
-use crate::core::package::Package;
-
-// TODO: convert core structure to vulsio json structure
+use crate::common::package::LibPackage;
+use crate::scanner::osinfo::OSInfo;
 
 #[derive(Serialize)]
 pub struct VulsIOReport {
@@ -10,12 +9,14 @@ pub struct VulsIOReport {
     server_name: String,
     family: String,
     release: String,
+    #[serde(rename = "runningKernel")]
+    running_kernel: Kernel,
     #[serde(rename = "libScanners")]
     lib_scanners: Vec<LibScanner>,
 }
 
 impl VulsIOReport {
-    pub fn new(package_groups: HashMap<String,Vec<Package>>) -> VulsIOReport {
+    pub fn new(os_info: OSInfo, package_groups: HashMap<String,Vec<LibPackage>>) -> VulsIOReport {
         let mut lib_scanners: Vec<LibScanner> = Vec::new();
         for (p, packages) in package_groups.into_iter() {
             let mut libs: Vec<Lib> = Vec::new();
@@ -35,22 +36,35 @@ impl VulsIOReport {
         }
 
         VulsIOReport {
-            server_name: "fishi-test".to_string(),
-            family: "ubunu".to_string(),
-            release: "18.04".to_string(),
+            server_name: String::from(os_info.hostname),
+            family: String::from(os_info.os),
+            release: String::from(os_info.os_release_version),
+            running_kernel: Kernel {
+                release: String::from(os_info.kernel),
+                version: "".to_string(),
+                reboot_required: "".to_string(),
+            },
             lib_scanners,
         }
     }
 }
 
 #[derive(Serialize)]
-pub struct LibScanner {
+struct Kernel {
+    release: String,
+    version: String,
+    #[serde(rename = "rebootRequired")]
+    reboot_required: String,
+}
+
+#[derive(Serialize)]
+struct LibScanner {
     path: String,
     libs: Vec<Lib>,
 }
 
 #[derive(Serialize)]
-pub struct Lib {
+struct Lib {
     name: String,
     version: String,
 }
