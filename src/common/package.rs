@@ -17,8 +17,12 @@ impl LibPackage {
         }
     }
 
-    pub fn get(self) -> (String,String) {
-        (String::from(self.name), String::from(self.version))
+    pub fn get_name(&self) -> String {
+        String::from(self.name.as_str())
+    }
+
+    pub fn get_version(&self) -> String {
+        String::from(self.version.as_str())
     }
 
     pub fn with_version(self, version: String) -> LibPackage {

@@ -11,7 +11,7 @@ use crate::common;
 use crate::common::package::LibPackage;
 
 pub struct PythonScanner {
-    pub package_groups: HashMap<String, Vec<common::package::LibPackage>>,
+    pub package_groups: HashMap<String, Vec<LibPackage>>,
     scan_files: Vec<DirEntry>,
 }
 
