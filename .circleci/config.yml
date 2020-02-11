@@ -13,6 +13,9 @@ jobs:
           name: install rust
           command: 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && cargo version'
       - run:
+          name: prepare venv
+          command: 'make -C test/ venv'
+      - run:
           name: test
-          command: 'make -C test/ circle-ci'
+          command: 'make -C test/ circle-ci-integration-test'
 
