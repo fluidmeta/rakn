@@ -7,13 +7,14 @@ use clap::{Arg, App};
 use crate::common::scanner::LibScannerExt;
 use std::fs;
 use std::path::PathBuf;
+use common::report::OutputType;
+use crate::common::report::ReportExt;
 
 mod scanner;
 mod common;
 mod report;
 
 fn main() {
-    // parse user input
     let matches = App::new("rakn")
         .version("0.1.0")
         .author("Karl Fischer <fishi0x01@gmail.com>")
@@ -31,8 +32,22 @@ fn main() {
             .value_name("DIR")
             .takes_value(true)
             .multiple(true))
+        .arg(Arg::with_name("output")
+            .short("o")
+            .long("output")
+            .value_name("TYPE")
+            .help("Allowed are 'vulsio' and 'rakn' (default)")
+            .default_value("rakn")
+            .takes_value(true))
+        .arg(Arg::with_name("pretty")
+            .short("p")
+            .long("pretty")
+            .takes_value(false))
         .get_matches();
 
+    // ***************
+    // Parse arguments
+    // ***************
     let dir = matches.value_of("dir").unwrap();
     let mut excluded_dirs:Vec<String>= Vec::new();
     if let Some(excluded) = matches.values_of("exclude") {
@@ -45,6 +60,13 @@ fn main() {
         }
     }
 
+    let output = match matches.value_of("output").unwrap() {
+        "vulsio" => OutputType::VulsIO,
+        _ => OutputType::Rakn,
+    };
+
+    let pretty = matches.is_present("pretty");
+
     // collect list of all files
     let metadata_files:Vec<DirEntry> = WalkDir::new(dir)
         .follow_links(false)
@@ -53,17 +75,29 @@ fn main() {
         .filter_map(|v| v.ok())
         .collect();
 
-    // basic host info
-    let os_info = scanner::osinfo::OSInfo::new();
+    // ******
+    // Scans
+    // ******
+    // OS
+    let os_info = scanner::osinfo::OSInfoScanner::new();
 
-    // scan files for python packages
+    // Python packages
     let py_scan = scanner::python::PythonScanner::new(metadata_files);
     let py_package_groups = py_scan.run();
 
-    // print vuls.io report
-    let vulsio_report = report::vulsio::VulsIOReport::new(os_info, py_package_groups);
-    let json_str = serde_json::to_string_pretty(&vulsio_report).unwrap();
-    println!("{}", json_str);
+    // *******
+    // Report
+    // *******
+    match output {
+        OutputType::VulsIO => {
+            let vulsio_report = report::vulsio::VulsIOReport::new(os_info, py_package_groups);
+            println!("{}", vulsio_report.get_report(&pretty));
+        },
+        OutputType::Rakn => {
+            let rakn_report = report::rakn::RaknReport::new(os_info, py_package_groups);
+            println!("{}", rakn_report.get_report(&pretty));
+        },
+    }
 
     // TODO: scan OS packages
     // TODO: scan golang packages

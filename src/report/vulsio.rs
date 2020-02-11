@@ -1,7 +1,17 @@
 use serde::Serialize;
 use std::collections::HashMap;
 use crate::common::package::LibPackage;
-use crate::scanner::osinfo::OSInfo;
+use crate::scanner::osinfo::OSInfoScanner;
+use crate::common::report::ReportExt;
+
+impl ReportExt for VulsIOReport {
+    fn get_report(&self, pretty: &bool) -> String {
+        match pretty {
+            true => serde_json::to_string_pretty(self).unwrap(),
+            false => serde_json::to_string(self).unwrap()
+        }
+    }
+}
 
 #[derive(Serialize)]
 pub struct VulsIOReport {
@@ -16,12 +26,13 @@ pub struct VulsIOReport {
 }
 
 impl VulsIOReport {
-    pub fn new(os_info: OSInfo, package_groups: HashMap<String,Vec<LibPackage>>) -> VulsIOReport {
+    pub fn new(os_info: OSInfoScanner, package_groups: HashMap<String,Vec<LibPackage>>) -> VulsIOReport {
         let mut lib_scanners: Vec<LibScanner> = Vec::new();
         for (p, packages) in package_groups.into_iter() {
             let mut libs: Vec<Lib> = Vec::new();
             for pkg in packages.into_iter() {
-                let (name, version) = pkg.get();
+                let name = pkg.get_name();
+                let version = pkg.get_version();
                 libs.push(Lib{
                     name,
                     version,
@@ -36,11 +47,11 @@ impl VulsIOReport {
         }
 
         VulsIOReport {
-            server_name: String::from(os_info.hostname),
-            family: String::from(os_info.os),
-            release: String::from(os_info.os_release_version),
+            server_name: String::from(os_info.get_hostname()),
+            family: String::from(os_info.get_os()),
+            release: String::from(os_info.get_os_release_version()),
             running_kernel: Kernel {
-                release: String::from(os_info.kernel),
+                release: String::from(os_info.get_kernel()),
                 version: "".to_string(),
                 reboot_required: "".to_string(),
             },
