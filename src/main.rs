@@ -4,11 +4,12 @@ extern crate regex;
 
 use walkdir::{WalkDir, DirEntry};
 use clap::{Arg, App};
-use crate::common::scanner::LibScannerExt;
+use crate::common::scanner::{LibScannerExt, OSScannerExt};
 use std::fs;
 use std::path::PathBuf;
 use common::report::OutputType;
 use crate::common::report::ReportExt;
+use crate::common::scanner::OSFamily;
 
 mod scanner;
 mod common;
@@ -80,6 +81,12 @@ fn main() {
     // ******
     // OS
     let os_info = scanner::osinfo::OSInfoScanner::new();
+    let os_scanner = match os_info.get_os_family() {
+        OSFamily::Debian => scanner::debian::DebianScanner::new(),
+        // TODO: handle unknown case
+        OSFamily::Unknown => scanner::debian::DebianScanner::new(),
+    };
+    let (os_packages, source_packages) = os_scanner.run();
 
     // Python packages
     let py_scan = scanner::python::PythonScanner::new(metadata_files);
@@ -90,11 +97,11 @@ fn main() {
     // *******
     match output {
         OutputType::VulsIO => {
-            let vulsio_report = report::vulsio::VulsIOReport::new(os_info, py_package_groups);
+            let vulsio_report = report::vulsio::VulsIOReport::new(os_info, os_packages, source_packages, py_package_groups);
             println!("{}", vulsio_report.get_report(&pretty));
         },
         OutputType::Rakn => {
-            let rakn_report = report::rakn::RaknReport::new(os_info, py_package_groups);
+            let rakn_report = report::rakn::RaknReport::new(os_info, os_packages, source_packages, py_package_groups);
             println!("{}", rakn_report.get_report(&pretty));
         },
     }

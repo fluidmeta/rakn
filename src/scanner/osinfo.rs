@@ -1,10 +1,14 @@
 extern crate sys_info;
 
+use crate::common::scanner::OSFamily;
+
 pub struct OSInfoScanner {
     hostname: String,
     os: String,
     os_release_version: String,
     kernel: String,
+    os_family: OSFamily,
+    arch: String,
 }
 
 impl OSInfoScanner {
@@ -14,6 +18,13 @@ impl OSInfoScanner {
             os: sys_info::linux_os_release().unwrap().name.unwrap().to_lowercase(),
             os_release_version: sys_info::linux_os_release().unwrap().version_id.unwrap(),
             kernel: sys_info::os_release().unwrap(),
+            os_family: {
+                match sys_info::linux_os_release().unwrap().name.unwrap().to_lowercase().as_str() {
+                    "ubuntu" | "debian" => OSFamily::Debian,
+                    _ => OSFamily::Unknown,
+                }
+            },
+            arch: get_arch(),
         }
     }
 
@@ -32,4 +43,25 @@ impl OSInfoScanner {
     pub fn get_kernel(&self) -> String {
         String::from(self.kernel.as_str())
     }
+
+    pub fn get_os_family(&self) -> OSFamily {
+        OSFamily::from(self.os_family)
+    }
+
+    pub fn get_arch(&self) -> String {
+        String::from(self.arch.as_str())
+    }
+}
+
+
+fn get_arch() -> String {
+    #[cfg(target_arch = "x86_64")]
+        {
+            return "x86_64".to_string()
+        }
+
+    #[cfg(target_arch = "x86")]
+        {
+            return "x86".to_string()
+        }
 }

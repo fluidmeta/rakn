@@ -8,7 +8,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use crate::common;
-use crate::common::package::LibPackage;
+use crate::common::package::{LibPackage, LibPackageBuilder, LibType};
 
 pub struct PythonScanner {
     pub package_groups: HashMap<String, Vec<LibPackage>>,
@@ -25,7 +25,7 @@ impl PythonScanner {
 }
 
 impl common::scanner::LibScannerExt for PythonScanner {
-    fn run(mut self) -> HashMap<String,Vec<LibPackage>> {
+    fn run(mut self) -> HashMap<String, Vec<LibPackage>> {
         let metadata_files: Vec<DirEntry> = self.scan_files
             .clone()
             .into_iter()
@@ -34,10 +34,12 @@ impl common::scanner::LibScannerExt for PythonScanner {
 
         for entry in metadata_files.iter() {
             // parse package version and name
-            let mut e = common::package::LibPackage::new(common::package::LibType::Python);
             let (name, version) = parse_py_metadata_file(&entry);
-            e = e.with_version(version);
-            e = e.with_name(name);
+            let pkg = LibPackageBuilder::new()
+                .with_name(name.as_str())
+                .with_version(version.as_str())
+                .with_lib_type(LibType::Python)
+                .finish();
 
             // get package path
             let mut path_buf = PathBuf::from(entry.path());
@@ -53,7 +55,7 @@ impl common::scanner::LibScannerExt for PythonScanner {
             self.package_groups
                 .entry(dir)
                 .or_insert(Vec::new())
-                .push(e);
+                .push(pkg);
         }
 
         self.package_groups
@@ -79,7 +81,7 @@ fn parse_py_metadata_file(p: &DirEntry) -> (String, String) {
     let contents = fs::read_to_string(path)
         .expect("Something went wrong reading the file");
 
-    let (mut name,mut version) = ("".to_string(), "".to_string());
+    let (mut name, mut version) = ("".to_string(), "".to_string());
     for cap in re_version.captures_iter(contents.as_str()) {
         version = cap[1].to_string();
     }
