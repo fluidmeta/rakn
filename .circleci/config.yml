@@ -3,16 +3,20 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: quay.io/fishi/rakn-test-images:debian-stretch
+      - image: circleci/rust:1.41.0
     steps:
+      - setup_remote_docker
       - checkout
       - run:
-          name: set paths
-          command: 'echo "export PATH=$HOME/.cargo/bin:$PATH" >> $BASH_ENV'
+          name: build
+          command: 'make build'
       - run:
-          name: prepare venv
-          command: 'make -C tests/ venv'
+          name: test ubuntu bionic
+          command: 'make test-ubuntu-bionic'
       - run:
-          name: test
-          command: 'make -C tests/ circle-ci-integration-test'
+          name: test debian stretch
+          command: 'make test-debian-stretch'
+      - run:
+          name: test python 3.6
+          command: 'make test-python-3.6'
 
