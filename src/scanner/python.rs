@@ -68,9 +68,10 @@ fn is_py_metadata_file(entry: &DirEntry) -> bool {
 }
 
 fn parse_py_metadata_file(p: &DirEntry) -> (String, String) {
-    // TODO: must be in root with lazy_static!
-    let re_version: Regex = Regex::new(r"(?m-i)^Version: ([\d\\.]+)$").unwrap();
-    let re_package: Regex = Regex::new(r"(?m-i)^Name: ([\w_-]+)$").unwrap();
+    lazy_static! {
+        static ref RE_VERSION: Regex = Regex::new(r"(?m-i)^Version: ([\d\\.]+)$").unwrap();
+        static ref RE_PACKAGE: Regex = Regex::new(r"(?m-i)^Name: ([\w_-]+)$").unwrap();
+    }
 
     let path = p.path()
         .to_str()
@@ -80,10 +81,10 @@ fn parse_py_metadata_file(p: &DirEntry) -> (String, String) {
         .expect("Something went wrong reading the file");
 
     let (mut name, mut version) = ("".to_string(), "".to_string());
-    for cap in re_version.captures_iter(contents.as_str()) {
+    for cap in RE_VERSION.captures_iter(contents.as_str()) {
         version = cap[1].to_string();
     }
-    for cap in re_package.captures_iter(contents.as_str()) {
+    for cap in RE_PACKAGE.captures_iter(contents.as_str()) {
         name = cap[1].to_string().to_lowercase();
     }
 

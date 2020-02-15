@@ -1,5 +1,8 @@
 #[macro_use]
 extern crate derive_builder;
+#[macro_use]
+extern crate lazy_static;
+
 extern crate clap;
 extern crate walkdir;
 extern crate regex;
@@ -53,7 +56,7 @@ fn main() {
     // Parse arguments
     // ***************
     let dir = matches.value_of("dir").unwrap();
-    let mut excluded_dirs:Vec<String>= Vec::new();
+    let mut excluded_dirs: Vec<String> = Vec::new();
     if let Some(excluded) = matches.values_of("exclude") {
         for exclude in excluded.into_iter() {
             let os_dir = fs::canonicalize(PathBuf::from(exclude));
@@ -72,10 +75,10 @@ fn main() {
     let pretty = matches.is_present("pretty");
 
     // collect list of all files
-    let files_to_scan:Vec<DirEntry> = WalkDir::new(dir)
+    let files_to_scan: Vec<DirEntry> = WalkDir::new(dir)
         .follow_links(false)
         .into_iter()
-        .filter_entry(|e|!is_excluded_dir(e, &excluded_dirs))
+        .filter_entry(|e| !is_excluded_dir(e, &excluded_dirs))
         .filter_map(|v| v.ok())
         .collect();
 
@@ -96,11 +99,11 @@ fn main() {
         OutputType::VulsIO => {
             let vulsio_report = report::vulsio::VulsIOReport::new(os_info, os_packages, source_packages, py_package_groups);
             println!("{}", vulsio_report.get_report(&pretty));
-        },
+        }
         OutputType::Rakn => {
             let rakn_report = report::rakn::RaknReport::new(os_info, os_packages, source_packages, py_package_groups);
             println!("{}", rakn_report.get_report(&pretty));
-        },
+        }
     }
 
     // TODO: scan golang packages

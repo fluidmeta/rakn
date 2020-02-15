@@ -19,7 +19,13 @@ impl OSInfoScanner {
             os_release_version: sys_info::linux_os_release().unwrap().version_id.unwrap(),
             kernel: sys_info::os_release().unwrap(),
             os_family: {
-                match sys_info::linux_os_release().unwrap().name.unwrap().to_lowercase().as_str() {
+                match sys_info::linux_os_release()
+                    .unwrap().name
+                    .unwrap()
+                    .to_lowercase()
+                    .split(" ")
+                    .collect::<Vec<&str>>()[0]
+                {
                     "ubuntu" | "debian" => OSFamily::Debian,
                     "centos" => OSFamily::CentOS,
                     _ => OSFamily::Unknown,
