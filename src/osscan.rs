@@ -3,6 +3,7 @@ use crate::scanner::osinfo::OSInfoScanner;
 use crate::common::scanner::OSFamily;
 use crate::scanner::dpkg::DpkgScanner;
 use crate::scanner::rpm::RpmScanner;
+use walkdir::DirEntry;
 
 pub fn scan(os_info: &OSInfoScanner) -> (Vec<BinaryPackage>, Vec<SourcePackage>) {
     match os_info.get_os_family() {
