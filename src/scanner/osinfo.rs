@@ -21,6 +21,7 @@ impl OSInfoScanner {
             os_family: {
                 match sys_info::linux_os_release().unwrap().name.unwrap().to_lowercase().as_str() {
                     "ubuntu" | "debian" => OSFamily::Debian,
+                    "centos" => OSFamily::CentOS,
                     _ => OSFamily::Unknown,
                 }
             },

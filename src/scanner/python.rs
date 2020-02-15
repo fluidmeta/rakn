@@ -7,7 +7,6 @@ use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
 use std::collections::HashMap;
-use crate::common;
 use crate::common::package::{LibPackage, LibPackageBuilder, LibType};
 
 pub struct PythonScanner {
@@ -22,10 +21,8 @@ impl PythonScanner {
             scan_files,
         }
     }
-}
 
-impl common::scanner::LibScannerExt for PythonScanner {
-    fn run(mut self) -> HashMap<String, Vec<LibPackage>> {
+    pub fn run(mut self) -> HashMap<String, Vec<LibPackage>> {
         let metadata_files: Vec<DirEntry> = self.scan_files
             .clone()
             .into_iter()
@@ -35,11 +32,12 @@ impl common::scanner::LibScannerExt for PythonScanner {
         for entry in metadata_files.iter() {
             // parse package version and name
             let (name, version) = parse_py_metadata_file(&entry);
-            let pkg = LibPackageBuilder::new()
-                .with_name(name.as_str())
-                .with_version(version.as_str())
-                .with_lib_type(LibType::Python)
-                .finish();
+            let pkg = LibPackageBuilder::default()
+                .name(name)
+                .version(version)
+                .lib_type(LibType::Python)
+                .build()
+                .unwrap();
 
             // get package path
             let mut path_buf = PathBuf::from(entry.path());

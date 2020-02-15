@@ -1,3 +1,4 @@
 pub mod python;
 pub mod osinfo;
-pub mod debian;
+pub mod dpkg;
+pub mod rpm;

@@ -1,19 +1,22 @@
+#[macro_use]
+extern crate derive_builder;
 extern crate clap;
 extern crate walkdir;
 extern crate regex;
 
 use walkdir::{WalkDir, DirEntry};
 use clap::{Arg, App};
-use crate::common::scanner::{LibScannerExt, OSScannerExt};
 use std::fs;
 use std::path::PathBuf;
 use common::report::OutputType;
 use crate::common::report::ReportExt;
-use crate::common::scanner::OSFamily;
+use crate::scanner::osinfo::OSInfoScanner;
 
 mod scanner;
 mod common;
 mod report;
+mod libscan;
+mod osscan;
 
 fn main() {
     let matches = App::new("rakn")
@@ -69,7 +72,7 @@ fn main() {
     let pretty = matches.is_present("pretty");
 
     // collect list of all files
-    let metadata_files:Vec<DirEntry> = WalkDir::new(dir)
+    let files_to_scan:Vec<DirEntry> = WalkDir::new(dir)
         .follow_links(false)
         .into_iter()
         .filter_entry(|e|!is_excluded_dir(e, &excluded_dirs))
@@ -80,17 +83,11 @@ fn main() {
     // Scans
     // ******
     // OS
-    let os_info = scanner::osinfo::OSInfoScanner::new();
-    let os_scanner = match os_info.get_os_family() {
-        OSFamily::Debian => scanner::debian::DebianScanner::new(),
-        // TODO: handle unknown case
-        OSFamily::Unknown => scanner::debian::DebianScanner::new(),
-    };
-    let (os_packages, source_packages) = os_scanner.run();
+    let os_info = OSInfoScanner::new();
+    let (os_packages, source_packages) = osscan::scan(&os_info);
 
-    // Python packages
-    let py_scan = scanner::python::PythonScanner::new(metadata_files);
-    let py_package_groups = py_scan.run();
+    // Lib packages
+    let py_package_groups = libscan::scan(files_to_scan);
 
     // *******
     // Report
@@ -106,9 +103,8 @@ fn main() {
         },
     }
 
-    // TODO: scan OS packages
     // TODO: scan golang packages
-    // TODO: scan files for nodejs packages
+    // TODO: scan nodejs packages
     // TODO: scan ruby gems
 }
 

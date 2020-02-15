@@ -4,6 +4,13 @@ pub enum LibType {
     Python,
 }
 
+impl Default for LibType {
+    fn default() -> Self {
+        LibType::Unknown
+    }
+}
+
+#[derive(Default, Builder)]
 pub struct LibPackage {
     name: String,
     version: String,
@@ -20,55 +27,7 @@ impl LibPackage {
     }
 }
 
-pub struct LibPackageBuilder {
-    name: String,
-    version: String,
-    lib_type: LibType,
-}
-
-impl LibPackageBuilder {
-    pub fn new() -> LibPackageBuilder {
-        LibPackageBuilder {
-            name: "".to_string(),
-            version: "".to_string(),
-            lib_type: LibType:: Unknown,
-        }
-    }
-
-    pub fn with_name(&self, name: &str) -> LibPackageBuilder {
-        LibPackageBuilder {
-            name: String::from(name),
-            version: String::from(self.version.as_str()),
-            lib_type: self.lib_type,
-        }
-    }
-
-    pub fn with_version(&self, version: &str) -> LibPackageBuilder {
-        LibPackageBuilder {
-            name: String::from(self.name.as_str()),
-            version: String::from(version),
-            lib_type: self.lib_type,
-        }
-    }
-
-    pub fn with_lib_type(&self, lib_type: LibType) -> LibPackageBuilder {
-        LibPackageBuilder {
-            name: String::from(self.name.as_str()),
-            version: String::from(self.version.as_str()),
-            lib_type,
-        }
-    }
-
-    pub fn finish(&self) -> LibPackage {
-        LibPackage {
-            name: String::from(self.name.as_str()),
-            version: String::from(self.version.as_str()),
-            lib_type: self.lib_type,
-        }
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, Default, Builder)]
 pub struct BinaryPackage {
     name: String,
     version: String,
@@ -81,41 +40,6 @@ impl BinaryPackage {
 
     pub fn get_version(&self) -> String {
         String::from(self.version.as_str())
-    }
-}
-
-pub struct BinaryPackageBuilder {
-    name: String,
-    version: String,
-}
-
-impl BinaryPackageBuilder {
-    pub fn new() -> BinaryPackageBuilder {
-        BinaryPackageBuilder {
-            name: "".to_string(),
-            version: "".to_string(),
-        }
-    }
-
-    pub fn with_name(&self, name: &str) -> BinaryPackageBuilder {
-        BinaryPackageBuilder {
-            name: String::from(name),
-            version: String::from(self.version.as_str()),
-        }
-    }
-
-    pub fn with_version(&self, version: &str) -> BinaryPackageBuilder {
-        BinaryPackageBuilder {
-            name: String::from(self.name.as_str()),
-            version: String::from(version),
-        }
-    }
-
-    pub fn finish(&self) -> BinaryPackage {
-        BinaryPackage {
-            name: String::from(self.name.as_str()),
-            version: String::from(self.version.as_str()),
-        }
     }
 }
 
