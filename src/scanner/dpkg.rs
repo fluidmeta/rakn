@@ -1,12 +1,15 @@
 use crate::common::package::{BinaryPackage, BinaryPackageBuilder, SourcePackage, SourcePackageBuilder};
-use crate::common::scanner::OSScannerExt;
 use std::process::Command;
 use std::collections::HashMap;
 
-pub struct DebianScanner {}
+pub struct DpkgScanner {}
 
-impl OSScannerExt for DebianScanner {
-    fn run(self) -> (Vec<BinaryPackage>, Vec<SourcePackage>) {
+impl DpkgScanner {
+    pub fn new() -> DpkgScanner {
+        DpkgScanner {}
+    }
+
+    pub fn run(self) -> (Vec<BinaryPackage>, Vec<SourcePackage>) {
         let mut binary_packages: Vec<BinaryPackage> = Vec::new();
         let mut source_packages_map: HashMap<String, SourcePackageBuilder> = HashMap::new();
         let output = Command::new("dpkg-query")
@@ -27,10 +30,11 @@ impl OSScannerExt for DebianScanner {
                 let pkg: &str = pkg_raw.split(":").collect::<Vec<&str>>()[0];
                 // if package is installed
                 if db_abrv.contains('i') {
-                    let binary_package = BinaryPackageBuilder::new()
-                        .with_name(pkg.trim())
-                        .with_version(version.trim())
-                        .finish();
+                    let binary_package = BinaryPackageBuilder::default()
+                        .name(String::from(pkg.trim()))
+                        .version(String::from(version.trim()))
+                        .build()
+                        .unwrap();
                     binary_packages.push(binary_package.clone());
 
                     // remove funky suffixes, e.g., " (libx for linux)"
@@ -49,11 +53,5 @@ impl OSScannerExt for DebianScanner {
 
         (binary_packages,
          source_packages_map.values().map(|x|x.finish()).collect())
-    }
-}
-
-impl DebianScanner {
-    pub fn new() -> DebianScanner {
-        DebianScanner {}
     }
 }

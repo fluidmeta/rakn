@@ -11,6 +11,9 @@ jobs:
           name: build
           command: 'make build'
       - run:
+          name: test centos 8
+          command: 'make test-centos-8'
+      - run:
           name: test ubuntu bionic
           command: 'make test-ubuntu-bionic'
       - run:

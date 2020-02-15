@@ -1,19 +1,25 @@
+#[macro_use]
+extern crate derive_builder;
+#[macro_use]
+extern crate lazy_static;
+
 extern crate clap;
 extern crate walkdir;
 extern crate regex;
 
 use walkdir::{WalkDir, DirEntry};
 use clap::{Arg, App};
-use crate::common::scanner::{LibScannerExt, OSScannerExt};
 use std::fs;
 use std::path::PathBuf;
 use common::report::OutputType;
 use crate::common::report::ReportExt;
-use crate::common::scanner::OSFamily;
+use crate::scanner::osinfo::OSInfoScanner;
 
 mod scanner;
 mod common;
 mod report;
+mod libscan;
+mod osscan;
 
 fn main() {
     let matches = App::new("rakn")
@@ -50,7 +56,7 @@ fn main() {
     // Parse arguments
     // ***************
     let dir = matches.value_of("dir").unwrap();
-    let mut excluded_dirs:Vec<String>= Vec::new();
+    let mut excluded_dirs: Vec<String> = Vec::new();
     if let Some(excluded) = matches.values_of("exclude") {
         for exclude in excluded.into_iter() {
             let os_dir = fs::canonicalize(PathBuf::from(exclude));
@@ -69,10 +75,10 @@ fn main() {
     let pretty = matches.is_present("pretty");
 
     // collect list of all files
-    let metadata_files:Vec<DirEntry> = WalkDir::new(dir)
+    let files_to_scan: Vec<DirEntry> = WalkDir::new(dir)
         .follow_links(false)
         .into_iter()
-        .filter_entry(|e|!is_excluded_dir(e, &excluded_dirs))
+        .filter_entry(|e| !is_excluded_dir(e, &excluded_dirs))
         .filter_map(|v| v.ok())
         .collect();
 
@@ -80,17 +86,11 @@ fn main() {
     // Scans
     // ******
     // OS
-    let os_info = scanner::osinfo::OSInfoScanner::new();
-    let os_scanner = match os_info.get_os_family() {
-        OSFamily::Debian => scanner::debian::DebianScanner::new(),
-        // TODO: handle unknown case
-        OSFamily::Unknown => scanner::debian::DebianScanner::new(),
-    };
-    let (os_packages, source_packages) = os_scanner.run();
+    let os_info = OSInfoScanner::new();
+    let (os_packages, source_packages) = osscan::scan(&os_info);
 
-    // Python packages
-    let py_scan = scanner::python::PythonScanner::new(metadata_files);
-    let py_package_groups = py_scan.run();
+    // Lib packages
+    let py_package_groups = libscan::scan(files_to_scan);
 
     // *******
     // Report
@@ -99,16 +99,15 @@ fn main() {
         OutputType::VulsIO => {
             let vulsio_report = report::vulsio::VulsIOReport::new(os_info, os_packages, source_packages, py_package_groups);
             println!("{}", vulsio_report.get_report(&pretty));
-        },
+        }
         OutputType::Rakn => {
             let rakn_report = report::rakn::RaknReport::new(os_info, os_packages, source_packages, py_package_groups);
             println!("{}", rakn_report.get_report(&pretty));
-        },
+        }
     }
 
-    // TODO: scan OS packages
     // TODO: scan golang packages
-    // TODO: scan files for nodejs packages
+    // TODO: scan nodejs packages
     // TODO: scan ruby gems
 }
 

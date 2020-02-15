@@ -7,7 +7,6 @@ use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
 use std::collections::HashMap;
-use crate::common;
 use crate::common::package::{LibPackage, LibPackageBuilder, LibType};
 
 pub struct PythonScanner {
@@ -22,10 +21,8 @@ impl PythonScanner {
             scan_files,
         }
     }
-}
 
-impl common::scanner::LibScannerExt for PythonScanner {
-    fn run(mut self) -> HashMap<String, Vec<LibPackage>> {
+    pub fn run(mut self) -> HashMap<String, Vec<LibPackage>> {
         let metadata_files: Vec<DirEntry> = self.scan_files
             .clone()
             .into_iter()
@@ -35,11 +32,12 @@ impl common::scanner::LibScannerExt for PythonScanner {
         for entry in metadata_files.iter() {
             // parse package version and name
             let (name, version) = parse_py_metadata_file(&entry);
-            let pkg = LibPackageBuilder::new()
-                .with_name(name.as_str())
-                .with_version(version.as_str())
-                .with_lib_type(LibType::Python)
-                .finish();
+            let pkg = LibPackageBuilder::default()
+                .name(name)
+                .version(version)
+                .lib_type(LibType::Python)
+                .build()
+                .unwrap();
 
             // get package path
             let mut path_buf = PathBuf::from(entry.path());
@@ -70,9 +68,10 @@ fn is_py_metadata_file(entry: &DirEntry) -> bool {
 }
 
 fn parse_py_metadata_file(p: &DirEntry) -> (String, String) {
-    // TODO: must be in root with lazy_static!
-    let re_version: Regex = Regex::new(r"(?m-i)^Version: ([\d\\.]+)$").unwrap();
-    let re_package: Regex = Regex::new(r"(?m-i)^Name: ([\w_-]+)$").unwrap();
+    lazy_static! {
+        static ref RE_VERSION: Regex = Regex::new(r"(?m-i)^Version: ([\d\\.]+)$").unwrap();
+        static ref RE_PACKAGE: Regex = Regex::new(r"(?m-i)^Name: ([\w_-]+)$").unwrap();
+    }
 
     let path = p.path()
         .to_str()
@@ -82,10 +81,10 @@ fn parse_py_metadata_file(p: &DirEntry) -> (String, String) {
         .expect("Something went wrong reading the file");
 
     let (mut name, mut version) = ("".to_string(), "".to_string());
-    for cap in re_version.captures_iter(contents.as_str()) {
+    for cap in RE_VERSION.captures_iter(contents.as_str()) {
         version = cap[1].to_string();
     }
-    for cap in re_package.captures_iter(contents.as_str()) {
+    for cap in RE_PACKAGE.captures_iter(contents.as_str()) {
         name = cap[1].to_string().to_lowercase();
     }
 
