@@ -90,7 +90,7 @@ fn main() {
     let (os_packages, source_packages) = osscan::scan(&os_info);
 
     // Lib packages
-    let py_package_groups = libscan::scan(files_to_scan);
+    let py_package_groups = libscan::scan(files_to_scan.clone());
 
     // *******
     // Report
