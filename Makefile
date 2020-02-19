@@ -1,5 +1,6 @@
 build:
 	cargo build
+	cargo test
 
 test-host-debian-stretch:
 	cp target/debug/rakn ext-tests/debian/stretch/rakn
