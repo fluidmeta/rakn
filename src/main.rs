@@ -14,6 +14,7 @@ use std::path::Path;
 use tempdir::TempDir;
 use walkdir::{DirEntry, WalkDir};
 use crate::scanner::python::PythonPackage;
+use crate::scanner::apk::ApkPackage;
 
 mod docker;
 mod report;
@@ -23,6 +24,7 @@ mod scanner;
 pub struct ScanResult {
     pub dpkg_binary_packages: Vec<DpkgBinary>,
     pub dpkg_source_packages: Vec<DpkgSource>,
+    pub apk_packages: Vec<ApkPackage>,
     pub python_packages: Vec<PythonPackage>,
 }
 
@@ -119,6 +121,16 @@ fn main() {
             Ok(p) => p,
         };
 
+    // try parsing /lib/apk/db/installed
+    let apk_packages =
+        match scanner::apk::scan(Path::new(scan_root_dir.as_str())) {
+            Err(e) => {
+                println!("{}", e);
+                vec![]
+            }
+            Ok(p) => p,
+        };
+
     // get python libraries
     let python_packages = match scanner::python::scan(&files_to_scan) {
         Err(e) => {
@@ -131,6 +143,7 @@ fn main() {
     let scan_result = ScanResultBuilder::default()
         .dpkg_binary_packages(dpkg_binary_packages)
         .dpkg_source_packages(dpkg_source_packages)
+        .apk_packages(apk_packages)
         .python_packages(python_packages)
         .build()
         .unwrap();

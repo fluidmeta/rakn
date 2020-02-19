@@ -25,6 +25,10 @@ test-docker-ubuntu-bionic:
 	docker pull ubuntu:bionic-20200112
 	target/debug/rakn -i ubuntu:bionic-20200112 | tee /dev/tty | grep "apt:1.6.12"
 
+test-docker-alpine-3.11:
+	docker pull alpine:3.11.3
+	target/debug/rakn -i alpine:3.11.3 | tee /dev/tty | grep "libc-utils:0.7.2-r0"
+
 test-docker-python-3.6:
 	docker pull tiangolo/uwsgi-nginx-flask:python3.6
 	target/debug/rakn -i tiangolo/uwsgi-nginx-flask:python3.6 | tee /dev/tty | grep "Flask:1.1.1"
