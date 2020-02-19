@@ -26,6 +26,10 @@ test-docker-ubuntu-bionic:
 	docker pull ubuntu:bionic-20200112
 	target/debug/rakn -i ubuntu:bionic-20200112 | tee /dev/tty | grep "apt:1.6.12"
 
+test-docker-debian-stretch:
+	docker pull debian:stretch-20200130-slim
+	target/debug/rakn -i debian:stretch-20200130-slim | tee /dev/tty | grep "shadow:1:4.4-4.1"
+
 test-docker-alpine-3.11:
 	docker pull alpine:3.11.3
 	target/debug/rakn -i alpine:3.11.3 | tee /dev/tty | grep "libc-utils:0.7.2-r0"
