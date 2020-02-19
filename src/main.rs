@@ -4,113 +4,136 @@ extern crate derive_builder;
 extern crate lazy_static;
 
 extern crate clap;
-extern crate walkdir;
 extern crate regex;
+extern crate tempdir;
+extern crate walkdir;
 
-use walkdir::{WalkDir, DirEntry};
-use clap::{Arg, App};
-use std::fs;
-use std::path::PathBuf;
-use common::report::OutputType;
-use crate::common::report::ReportExt;
-use crate::scanner::osinfo::OSInfoScanner;
+use crate::scanner::dpkg::{DpkgBinary, DpkgSource};
+use clap::{App, Arg};
+use std::path::Path;
+use tempdir::TempDir;
+use walkdir::{DirEntry, WalkDir};
+use crate::scanner::python::PythonPackage;
 
-mod scanner;
-mod common;
+mod docker;
 mod report;
-mod libscan;
-mod osscan;
+mod scanner;
+
+#[derive(Builder, Clone)]
+pub struct ScanResult {
+    pub dpkg_binary_packages: Vec<DpkgBinary>,
+    pub dpkg_source_packages: Vec<DpkgSource>,
+    pub python_packages: Vec<PythonPackage>,
+}
 
 fn main() {
     let matches = App::new("rakn")
         .version("0.1.0")
         .author("Karl Fischer <fishi0x01@gmail.com>")
-        .about("Simple package version scanner")
-        .arg(Arg::with_name("dir")
-            .short("d")
-            .long("dir")
-            .value_name("DIR")
-            .help("Which dir to scan recursively")
-            .takes_value(true)
-            .required(true))
-        .arg(Arg::with_name("exclude")
-            .short("e")
-            .long("exclude-dir")
-            .value_name("DIR")
-            .takes_value(true)
-            .multiple(true))
-        .arg(Arg::with_name("output")
-            .short("o")
-            .long("output")
-            .value_name("TYPE")
-            .help("Allowed are 'vulsio' and 'rakn' (default)")
-            .default_value("rakn")
-            .takes_value(true))
-        .arg(Arg::with_name("pretty")
-            .short("p")
-            .long("pretty")
-            .takes_value(false))
+        .about("Simple version scanner")
+        .arg(
+            Arg::with_name("docker_image")
+                .short("i")
+                .long("docker-image")
+                .value_name("IMAGE")
+                .help("Which docker image to scan")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("dir")
+                .short("d")
+                .long("dir")
+                .value_name("DIR")
+                .help("Which dir to scan recursively")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("exclude")
+                .short("e")
+                .long("exclude-dir")
+                .value_name("DIR")
+                .takes_value(true)
+                .multiple(true),
+        )
+        .arg(
+            Arg::with_name("output")
+                .short("o")
+                .long("output")
+                .value_name("TYPE")
+                .help("Allowed are 'vulsio' and 'rakn' (default)")
+                .default_value("rakn")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("pretty")
+                .short("p")
+                .long("pretty")
+                .takes_value(false),
+        )
         .get_matches();
 
     // ***************
     // Parse arguments
     // ***************
-    let dir = matches.value_of("dir").unwrap();
-    let mut excluded_dirs: Vec<String> = Vec::new();
-    if let Some(excluded) = matches.values_of("exclude") {
-        for exclude in excluded.into_iter() {
-            let os_dir = fs::canonicalize(PathBuf::from(exclude));
-            match os_dir {
-                Ok(os_dir) => excluded_dirs.push(String::from(os_dir.to_str().unwrap())),
-                _ => (),
-            }
-        }
-    }
-
-    let output = match matches.value_of("output").unwrap() {
-        "vulsio" => OutputType::VulsIO,
-        _ => OutputType::Rakn,
+    let docker_image = matches.value_of("docker_image");
+    let scan_dir = match matches.value_of("dir") {
+        Some(d) => d,
+        // Default
+        None => "/",
+    };
+    let excluded_dirs = match matches.values_of("exclude") {
+        Some(values) => values.into_iter().collect::<Vec<&str>>(),
+        // Defaults
+        None => vec!["/dev", "/proc", "/sys"],
     };
 
-    let pretty = matches.is_present("pretty");
+    // *********
+    // Execution
+    // *********
+    let tmp_dir_alloc = TempDir::new(env!("CARGO_PKG_NAME")).unwrap();
 
-    // collect list of all files
-    let files_to_scan: Vec<DirEntry> = WalkDir::new(dir)
+    // determine scan root
+    let scan_root_dir = match docker_image {
+        Some(i) => docker::extract_image(i, &tmp_dir_alloc).unwrap(),
+        None => "/".to_string(),
+    };
+
+    // collect files eligible for scanning in scan root
+    let files_to_scan: Vec<DirEntry> = WalkDir::new(format!("{}/{}", scan_root_dir, scan_dir))
         .follow_links(false)
         .into_iter()
-        .filter_entry(|e| !is_excluded_dir(e, &excluded_dirs))
+        .filter_entry(|d| {
+            // TODO: remove from scan_root_dir prefix
+            !excluded_dirs.contains(&d.path().to_str().unwrap())
+        })
         .filter_map(|v| v.ok())
         .collect();
 
-    // ******
-    // Scans
-    // ******
-    // OS
-    let os_info = OSInfoScanner::new();
-    let (os_packages, source_packages) = osscan::scan(&os_info);
+    // try parsing /var/lib/dpkg/status
+    let (dpkg_binary_packages, dpkg_source_packages) =
+        match scanner::dpkg::scan(Path::new(scan_root_dir.as_str())) {
+            Err(e) => {
+                println!("{}", e);
+                (vec![], vec![])
+            }
+            Ok(p) => p,
+        };
 
-    // Lib packages
-    let py_package_groups = libscan::scan(files_to_scan.clone());
+    // get python libraries
+    let python_packages = match scanner::python::scan(&files_to_scan) {
+        Err(e) => {
+            println!("{}", e);
+            vec![]
+        },
+        Ok(p) => p,
+    };
 
-    // *******
-    // Report
-    // *******
-    match output {
-        OutputType::VulsIO => {
-            let vulsio_report = report::vulsio::VulsIOReport::new(os_info, os_packages, source_packages, py_package_groups);
-            println!("{}", vulsio_report.get_report(&pretty));
-        }
-        OutputType::Rakn => {
-            let rakn_report = report::rakn::RaknReport::new(os_info, os_packages, source_packages, py_package_groups);
-            println!("{}", rakn_report.get_report(&pretty));
-        }
-    }
+    let scan_result = ScanResultBuilder::default()
+        .dpkg_binary_packages(dpkg_binary_packages)
+        .dpkg_source_packages(dpkg_source_packages)
+        .python_packages(python_packages)
+        .build()
+        .unwrap();
 
-    // TODO: scan golang packages
-    // TODO: scan nodejs packages
-    // TODO: scan ruby gems
-}
-
-fn is_excluded_dir(dir: &DirEntry, excluded_dirs: &Vec<String>) -> bool {
-    excluded_dirs.contains(&dir.path().to_str().unwrap().to_string())
+    report::rakn::print(&scan_result);
 }
