@@ -8,18 +8,26 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
-          name: build
+          name: 'build'
           command: 'make build'
       - run:
-          name: test centos 8
-          command: 'make test-centos-8'
+          name: '[host test] debian stretch'
+          command: 'make test-host-debian-stretch'
       - run:
-          name: test ubuntu bionic
-          command: 'make test-ubuntu-bionic'
+          name: '[host test] ubuntu bionic'
+          command: 'make test-host-ubuntu-bionic'
       - run:
-          name: test debian stretch
-          command: 'make test-debian-stretch'
+          name: '[host test] python3.6'
+          command: 'make test-host-python-3.6'
       - run:
-          name: test python 3.6
-          command: 'make test-python-3.6'
-
+          name: '[docker test] ubuntu bionic'
+          command: 'make test-docker-ubuntu-bionic'
+      - run:
+          name: '[docker test] debian stretch'
+          command: 'make test-docker-debian-stretch'
+      - run:
+          name: '[docker test] alpine 3.11'
+          command: 'make test-docker-alpine-3.11'
+      - run:
+          name: '[docker test] python3.6'
+          command: 'make test-docker-python-3.6'
