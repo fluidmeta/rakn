@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rakn -e /proc/ -e /sys/ -e /dev/ -e /does-not-exist -o vulsio -p -d / | tee /dev/tty | grep "\"git\": {"
+rakn | tee /dev/tty | grep "git:1:2.17.1-1ubuntu0.5"
