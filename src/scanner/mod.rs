@@ -1,3 +1,3 @@
-pub mod dpkg;
-pub mod python;
-pub mod apk;
+pub mod lib;
+pub mod os;
+pub mod pkg;
