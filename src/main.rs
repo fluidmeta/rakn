@@ -8,24 +8,25 @@ extern crate regex;
 extern crate tempdir;
 extern crate walkdir;
 
-use crate::scanner::dpkg::{DpkgBinary, DpkgSource};
 use clap::{App, Arg};
 use std::path::Path;
 use tempdir::TempDir;
 use walkdir::{DirEntry, WalkDir};
-use crate::scanner::python::PythonPackage;
-use crate::scanner::apk::ApkPackage;
+use crate::scanner::{lib, pkg};
+use crate::os::OSInfo;
 
 mod docker;
 mod report;
 mod scanner;
+mod os;
 
 #[derive(Builder, Clone)]
 pub struct ScanResult {
-    pub dpkg_binary_packages: Vec<DpkgBinary>,
-    pub dpkg_source_packages: Vec<DpkgSource>,
-    pub apk_packages: Vec<ApkPackage>,
-    pub python_packages: Vec<PythonPackage>,
+    pub os_info: OSInfo,
+    pub dpkg_binary_packages: Vec<pkg::dpkg::DpkgBinary>,
+    pub dpkg_source_packages: Vec<pkg::dpkg::DpkgSource>,
+    pub apk_packages: Vec<pkg::apk::ApkPackage>,
+    pub python_packages: Vec<lib::python::PythonPackage>,
 }
 
 fn main() {
@@ -111,36 +112,30 @@ fn main() {
         .filter_map(|v| v.ok())
         .collect();
 
+    let os_info = os::scan_os_info(Path::new(scan_root_dir.as_str()));
+
     // try parsing /var/lib/dpkg/status
     let (dpkg_binary_packages, dpkg_source_packages) =
-        match scanner::dpkg::scan(Path::new(scan_root_dir.as_str())) {
-            Err(e) => {
-                println!("{}", e);
-                (vec![], vec![])
-            }
+        match pkg::dpkg::scan(Path::new(scan_root_dir.as_str())) {
+            Err(_) => (vec![], vec![]),
             Ok(p) => p,
         };
 
     // try parsing /lib/apk/db/installed
     let apk_packages =
-        match scanner::apk::scan(Path::new(scan_root_dir.as_str())) {
-            Err(e) => {
-                println!("{}", e);
-                vec![]
-            }
+        match pkg::apk::scan(Path::new(scan_root_dir.as_str())) {
+            Err(_) => vec![],
             Ok(p) => p,
         };
 
     // get python libraries
-    let python_packages = match scanner::python::scan(&files_to_scan) {
-        Err(e) => {
-            println!("{}", e);
-            vec![]
-        },
+    let python_packages = match lib::python::scan(&files_to_scan) {
+        Err(_) => vec![],
         Ok(p) => p,
     };
 
     let scan_result = ScanResultBuilder::default()
+        .os_info(os_info)
         .dpkg_binary_packages(dpkg_binary_packages)
         .dpkg_source_packages(dpkg_source_packages)
         .apk_packages(apk_packages)
