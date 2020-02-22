@@ -1,6 +1,6 @@
-use std::{fmt, fs, io};
-use std::path::Path;
 use regex::Regex;
+use std::path::Path;
+use std::{fmt, fs, io};
 
 #[derive(Builder, Clone)]
 pub struct DebianInfo {
@@ -23,6 +23,7 @@ impl DebianInfo {
     }
 }
 
+#[derive(Debug)]
 pub struct DebianError {
     message: String,
 }
@@ -58,8 +59,10 @@ fn parse_os_release_file(os_release_content: &str) -> Result<DebianInfo, DebianE
     lazy_static! {
         static ref RE_NAME: Regex = Regex::new(r#"(?m-i)^NAME="(?P<name>.*)"$"#).unwrap();
         static ref RE_ID: Regex = Regex::new(r#"(?m-i)^ID=(?P<id>.*)$"#).unwrap();
-        static ref RE_RELEASE: Regex = Regex::new(r#"(?m-i)^VERSION_ID="(?P<release>.*)"$"#).unwrap();
-        static ref RE_CODENAME: Regex = Regex::new(r#"(?m-i)^VERSION_CODENAME=(?P<codename>.*)$"#).unwrap();
+        static ref RE_RELEASE: Regex =
+            Regex::new(r#"(?m-i)^VERSION_ID="(?P<release>.*)"$"#).unwrap();
+        static ref RE_CODENAME: Regex =
+            Regex::new(r#"(?m-i)^VERSION_CODENAME=(?P<codename>.*)$"#).unwrap();
     }
 
     let os_name = match RE_NAME.captures(os_release_content) {
@@ -68,11 +71,9 @@ fn parse_os_release_file(os_release_content: &str) -> Result<DebianInfo, DebianE
     };
 
     match os_name.contains("Ubuntu") || os_name.contains("Debian") {
-        false => {
-            Err(DebianError {
-                message: String::from("No fitting identifier found in etc/os-release"),
-            })
-        }
+        false => Err(DebianError {
+            message: String::from("No fitting identifier found in etc/os-release"),
+        }),
         true => {
             let os_id = match RE_ID.captures(os_release_content) {
                 Some(s) => s.name("id").unwrap().as_str(),
@@ -120,12 +121,11 @@ HOME_URL=\"https://www.debian.org/\"
 SUPPORT_URL=\"https://www.debian.org/support\"
 BUG_REPORT_URL=\"https://bugs.debian.org/\"
 ";
-        let debian_info = parse_os_release_file(os_release_content)
-            .unwrap_or(DebianInfo {
-                id: String::from(""),
-                release: String::from(""),
-                codename: String::from(""),
-            });
+        let debian_info = parse_os_release_file(os_release_content).unwrap_or(DebianInfo {
+            id: String::from(""),
+            release: String::from(""),
+            codename: String::from(""),
+        });
         assert_eq!(debian_info.get_id(), "debian");
         assert_eq!(debian_info.get_release(), "9");
         assert_eq!(debian_info.get_codename(), "stretch");

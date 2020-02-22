@@ -1,6 +1,6 @@
-use std::{fmt, fs, io};
-use std::path::Path;
 use regex::Regex;
+use std::path::Path;
+use std::{fmt, fs, io};
 
 #[derive(Builder, Clone)]
 pub struct AlpineInfo {
@@ -18,6 +18,7 @@ impl AlpineInfo {
     }
 }
 
+#[derive(Debug)]
 pub struct AlpineError {
     message: String,
 }
@@ -62,14 +63,11 @@ fn parse_os_release_file(os_release_content: &str) -> Result<AlpineInfo, AlpineE
     };
 
     match os_name.contains("Alpine") {
-        false => {
-            Err(AlpineError {
-                message: String::from("'Alpine' not in os-release file"),
-            })
-        }
+        false => Err(AlpineError {
+            message: String::from("'Alpine' not in os-release file"),
+        }),
         true => {
-            let
-                os_id = match RE_ID.captures(os_release_content) {
+            let os_id = match RE_ID.captures(os_release_content) {
                 Some(s) => s.name("id").unwrap().as_str(),
                 None => "",
             };
@@ -106,11 +104,10 @@ PRETTY_NAME=\"Alpine Linux v3.11\"
 HOME_URL=\"https://alpinelinux.org/\"
 BUG_REPORT_URL=\"https://bugs.alpinelinux.org/\"
 ";
-        let debian_info = parse_os_release_file(os_release_content)
-            .unwrap_or(AlpineInfo{
-                id: String::from(""),
-                release: String::from(""),
-            });
+        let debian_info = parse_os_release_file(os_release_content).unwrap_or(AlpineInfo {
+            id: String::from(""),
+            release: String::from(""),
+        });
         assert_eq!(debian_info.get_id(), "alpine");
         assert_eq!(debian_info.get_release(), "3.11.3");
     }

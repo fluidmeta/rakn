@@ -7,18 +7,17 @@ extern crate clap;
 extern crate regex;
 extern crate tempdir;
 extern crate walkdir;
+extern crate libdb;
 
 use clap::{App, Arg};
 use std::path::Path;
 use tempdir::TempDir;
 use walkdir::{DirEntry, WalkDir};
-use crate::scanner::{lib, pkg};
-use crate::os::OSInfo;
+use crate::scanner::{os, lib, pkg};
 
-mod docker;
+mod extract;
 mod report;
-mod scanner;
-mod os;
+pub mod scanner;
 
 #[derive(Builder, Clone)]
 pub struct ScanResult {
@@ -97,7 +96,7 @@ fn main() {
 
     // determine scan root
     let scan_root_dir = match docker_image {
-        Some(i) => docker::extract_image(i, &tmp_dir_alloc).unwrap(),
+        Some(i) => extract::docker::extract_image(i, &tmp_dir_alloc).unwrap(),
         None => "/".to_string(),
     };
 
@@ -112,7 +111,7 @@ fn main() {
         .filter_map(|v| v.ok())
         .collect();
 
-    let os_info = os::scan_os_info(Path::new(scan_root_dir.as_str()));
+    let os_info = scan_os_info(Path::new(scan_root_dir.as_str()));
 
     // try parsing /var/lib/dpkg/status
     let (dpkg_binary_packages, dpkg_source_packages) =
@@ -124,6 +123,13 @@ fn main() {
     // try parsing /lib/apk/db/installed
     let apk_packages =
         match pkg::apk::scan(Path::new(scan_root_dir.as_str())) {
+            Err(_) => vec![],
+            Ok(p) => p,
+        };
+
+    // try parsing /var/lib/rpm/Packages
+    let rpm_packages =
+        match pkg::rpm::scan(Path::new(scan_root_dir.as_str())) {
             Err(_) => vec![],
             Ok(p) => p,
         };
@@ -144,4 +150,47 @@ fn main() {
         .unwrap();
 
     report::rakn::print(&scan_result);
+}
+
+#[derive(Builder, Clone)]
+pub struct OSInfo {
+    pub id: String,
+    pub release: String,
+    pub codename: String,
+}
+
+pub fn scan_os_info(root_dir: &Path) -> OSInfo {
+    let debian_info = os::debian::scan(root_dir);
+    let alpine_info = os::alpine::scan(root_dir);
+
+    match debian_info {
+        Ok(info) => {
+            return OSInfoBuilder::default()
+                .id(info.get_id())
+                .release(info.get_release())
+                .codename(info.get_codename())
+                .build()
+                .unwrap()
+        }
+        Err(_) => {}
+    }
+
+    match alpine_info {
+        Ok(info) => {
+            return OSInfoBuilder::default()
+                .id(info.get_id())
+                .release(info.get_release())
+                .codename(String::from(""))
+                .build()
+                .unwrap()
+        }
+        Err(_) => {}
+    }
+
+    return OSInfoBuilder::default()
+        .id(String::from(""))
+        .release(String::from(""))
+        .codename(String::from(""))
+        .build()
+        .unwrap();
 }

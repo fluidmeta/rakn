@@ -19,3 +19,4 @@ sys-info = "0.5.9"
 derive_builder = "0.9.0"
 docker_extract = "0.2.0"
 tempdir = "0.3.7"
+libdb = { git = "https://github.com/fishi0x01/libdb-rs", branch = "fishi0x01/add-cursor" }
