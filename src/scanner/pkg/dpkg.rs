@@ -38,6 +38,7 @@ impl DpkgSource {
     }
 }
 
+#[derive(Debug)]
 pub struct DpkgError {
     message: String,
 }

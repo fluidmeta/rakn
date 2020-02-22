@@ -1,7 +1,8 @@
+use regex::Regex;
 use std::path::Path;
 use std::{fmt, fs, io};
-use regex::Regex;
 
+#[derive(Debug)]
 pub struct ApkError {
     message: String,
 }
@@ -59,11 +60,7 @@ fn parse_apk_db_content(apk_db_content: &str) -> Vec<ApkPackage> {
 
     let mut apk_packages: Vec<ApkPackage> = vec![];
 
-    for package_block in apk_db_content
-        .split("\n\n")
-        .collect::<Vec<&str>>()
-        .iter()
-    {
+    for package_block in apk_db_content.split("\n\n").collect::<Vec<&str>>().iter() {
         let package_name = match RE_PACKAGE.captures(package_block) {
             Some(s) => s.name("package").unwrap().as_str(),
             None => "",
@@ -80,12 +77,14 @@ fn parse_apk_db_content(apk_db_content: &str) -> Vec<ApkPackage> {
         };
 
         if !package_name.is_empty() {
-            apk_packages.push(ApkPackageBuilder::default()
-                .package(String::from(package_name))
-                .version(String::from(package_version))
-                .arch(String::from(package_arch))
-                .build()
-                .unwrap());
+            apk_packages.push(
+                ApkPackageBuilder::default()
+                    .package(String::from(package_name))
+                    .version(String::from(package_version))
+                    .arch(String::from(package_arch))
+                    .build()
+                    .unwrap(),
+            );
         }
     }
 

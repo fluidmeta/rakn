@@ -23,6 +23,7 @@ impl PythonPackage {
     }
 }
 
+#[derive(Debug)]
 pub struct PythonError {
     message: String,
 }
@@ -58,12 +59,14 @@ pub fn scan(files: &Vec<DirEntry>) -> Result<Vec<PythonPackage>, PythonError> {
         // parse package version and name
         let contents = fs::read_to_string(entry.path().to_str().unwrap())?;
         let (name, version) = parse_py_metadata_file(contents.as_str());
-        python_packages.push(PythonPackageBuilder::default()
-            .name(String::from(name))
-            .version(String::from(version))
-            .lib_path(String::from(entry.path().to_str().unwrap()))
-            .build()
-            .unwrap());
+        python_packages.push(
+            PythonPackageBuilder::default()
+                .name(String::from(name))
+                .version(String::from(version))
+                .lib_path(String::from(entry.path().to_str().unwrap()))
+                .build()
+                .unwrap(),
+        );
     }
 
     Ok(python_packages)
@@ -71,7 +74,8 @@ pub fn scan(files: &Vec<DirEntry>) -> Result<Vec<PythonPackage>, PythonError> {
 
 fn parse_py_metadata_file(content: &str) -> (String, String) {
     lazy_static! {
-        static ref RE_VERSION: Regex = Regex::new(r"(?m-i)^Version: (?P<version>[\d\\.]+)$").unwrap();
+        static ref RE_VERSION: Regex =
+            Regex::new(r"(?m-i)^Version: (?P<version>[\d\\.]+)$").unwrap();
         static ref RE_NAME: Regex = Regex::new(r"(?m-i)^Name: (?P<name>[\w_-]+)$").unwrap();
     }
 
