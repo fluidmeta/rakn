@@ -41,6 +41,19 @@ pub fn print(report: &ScanResult) -> String {
     }
     result.push_str("\n");
 
+    result.push_str("Rpm packages\n------\n\n");
+    for p in report.rpm_packages.iter() {
+        result.push_str(
+            format!(
+                "{}:{}\n",
+                p.get_name().as_str(),
+                p.get_version().as_str()
+            )
+                .as_str(),
+        );
+    }
+    result.push_str("\n");
+
     result.push_str("Python packages\n------\n\n");
     for p in report.python_packages.iter() {
         result.push_str(

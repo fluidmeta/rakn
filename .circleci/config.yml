@@ -8,6 +8,9 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
+          name: 'Prepare'
+          command: 'rustup target add x86_64-unknown-linux-musl'
+      - run:
           name: '[cargo test]'
           command: 'make test'
       - run:
@@ -19,3 +22,9 @@ jobs:
       - run:
           name: '[host test] python3.6'
           command: 'make test-host-python-3.6'
+      - run:
+          name: '[host test] centos 7'
+          command: 'make test-host-centos-7'
+      - run:
+          name: '[host test] centos 8'
+          command: 'make test-host-centos-8'
