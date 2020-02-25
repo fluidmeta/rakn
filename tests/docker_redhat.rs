@@ -20,12 +20,3 @@ fn test_centos_7() {
     // TODO
     assert_eq!(pkgs.len(), 0);
 }
-
-#[test]
-fn test_centos_6() {
-    let (tmp_dir_alloc, _) = docker::extract_docker_image("centos:6.10");
-
-    let pkgs = rakn::scanner::pkg::rpm::scan(tmp_dir_alloc.path()).expect("Could not scan rpm");
-    // TODO
-    assert_eq!(pkgs.len(), 0);
-}
