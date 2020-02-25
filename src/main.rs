@@ -7,7 +7,6 @@ extern crate clap;
 extern crate regex;
 extern crate tempdir;
 extern crate walkdir;
-extern crate libdb;
 
 use clap::{App, Arg};
 use std::path::Path;
@@ -25,6 +24,7 @@ pub struct ScanResult {
     pub dpkg_binary_packages: Vec<pkg::dpkg::DpkgBinary>,
     pub dpkg_source_packages: Vec<pkg::dpkg::DpkgSource>,
     pub apk_packages: Vec<pkg::apk::ApkPackage>,
+    pub rpm_packages: Vec<pkg::rpm::RpmPackage>,
     pub python_packages: Vec<lib::python::PythonPackage>,
 }
 
@@ -145,6 +145,7 @@ fn main() {
         .dpkg_binary_packages(dpkg_binary_packages)
         .dpkg_source_packages(dpkg_source_packages)
         .apk_packages(apk_packages)
+        .rpm_packages(rpm_packages)
         .python_packages(python_packages)
         .build()
         .unwrap();
@@ -162,6 +163,7 @@ pub struct OSInfo {
 pub fn scan_os_info(root_dir: &Path) -> OSInfo {
     let debian_info = os::debian::scan(root_dir);
     let alpine_info = os::alpine::scan(root_dir);
+    let redhat_info = os::redhat::scan(root_dir);
 
     match debian_info {
         Ok(info) => {
@@ -176,6 +178,18 @@ pub fn scan_os_info(root_dir: &Path) -> OSInfo {
     }
 
     match alpine_info {
+        Ok(info) => {
+            return OSInfoBuilder::default()
+                .id(info.get_id())
+                .release(info.get_release())
+                .codename(String::from(""))
+                .build()
+                .unwrap()
+        }
+        Err(_) => {}
+    }
+
+    match redhat_info {
         Ok(info) => {
             return OSInfoBuilder::default()
                 .id(info.get_id())

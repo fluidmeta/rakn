@@ -1,4 +1,4 @@
-FROM centos:8.1.1911
+FROM centos:6.10
 
 RUN yum install -y git
 

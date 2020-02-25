@@ -13,6 +13,16 @@ test-host-ubuntu-bionic:
 	docker build -t ubuntu-bionic-test:latest $(HOST_TESTS)/ubuntu/bionic/
 	docker run -it ubuntu-bionic-test:latest
 
+test-host-centos-6:
+	cp target/debug/rakn $(HOST_TESTS)/centos/6/rakn
+	docker build -t centos-6-test:latest $(HOST_TESTS)/centos/6/
+	docker run -it centos-6-test:latest
+
+test-host-centos-7:
+	cp target/debug/rakn $(HOST_TESTS)/centos/7/rakn
+	docker build -t centos-7-test:latest $(HOST_TESTS)/centos/7/
+	docker run -it centos-7-test:latest
+
 test-host-centos-8:
 	cp target/debug/rakn $(HOST_TESTS)/centos/8/rakn
 	docker build -t centos-8-test:latest $(HOST_TESTS)/centos/8/
