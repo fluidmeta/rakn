@@ -37,7 +37,7 @@ impl RpmPackage {
 }
 
 pub fn scan(root_dir: &Path) -> Result<Vec<RpmPackage>, RpmError> {
-    let rpm_db = format!("{}/var/lib/rpm", root_dir.display().to_string());
+    let rpm_db = format!("{}/var/lib/rpm/Packages", root_dir.display().to_string());
     match Path::new(rpm_db.as_str()).exists() {
         false => Err(RpmError {
             message: format!("rpm db not found at {}", rpm_db).to_string(),
@@ -48,6 +48,17 @@ pub fn scan(root_dir: &Path) -> Result<Vec<RpmPackage>, RpmError> {
 
 fn read_rpm_db(rpm_db: &Path) -> Result<Vec<RpmPackage>, RpmError> {
     let mut packages: Vec<RpmPackage> = vec![];
+
+    // TODO
+    // let mut cursor = libdb::DatabaseBuilder::new()
+    //     .file(rpm_db)
+    //     .db_type(libdb::DbType::Hash)
+    //     .flags(libdb::Flags::DB_RDONLY)
+    //     .open()
+    //     .unwrap()
+    //     .cursor()
+    //     .unwrap();
+    // let r = cursor.next();
 
     // TODO
 //     // XXX: libtpm::set_db_path is global .. Cannot scan in parallel
