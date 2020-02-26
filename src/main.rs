@@ -17,6 +17,7 @@ use crate::scanner::{os, lib, pkg};
 mod extract;
 mod report;
 pub mod scanner;
+pub mod util;
 
 #[derive(Builder, Clone)]
 pub struct ScanResult {
@@ -25,6 +26,7 @@ pub struct ScanResult {
     pub dpkg_source_packages: Vec<pkg::dpkg::DpkgSource>,
     pub apk_packages: Vec<pkg::apk::ApkPackage>,
     pub rpm_packages: Vec<pkg::rpm::RpmPackage>,
+    pub node_packages: Vec<lib::nodejs::NodeJsPackage>,
     pub python_packages: Vec<lib::python::PythonPackage>,
 }
 
@@ -100,18 +102,11 @@ fn main() {
         None => "/".to_string(),
     };
 
-    // collect files eligible for scanning in scan root
-    let files_to_scan: Vec<DirEntry> = WalkDir::new(format!("{}/{}", scan_root_dir, scan_dir))
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|d| {
-            // TODO: remove from scan_root_dir prefix
-            !excluded_dirs.contains(&d.path().to_str().unwrap())
-        })
-        .filter_map(|v| v.ok())
-        .collect();
-
+    // get OS info
     let os_info = scan_os_info(Path::new(scan_root_dir.as_str()));
+
+    // collect files eligible for scanning in scan root
+    let files_to_scan = util::get_files_to_scan(Path::new(format!("{}/{}", scan_root_dir, scan_dir).as_str()), &excluded_dirs);
 
     // try parsing /var/lib/dpkg/status
     let (dpkg_binary_packages, dpkg_source_packages) =
@@ -140,12 +135,19 @@ fn main() {
         Ok(p) => p,
     };
 
+    // get node libraries
+    let node_packages = match lib::nodejs::scan(&files_to_scan) {
+        Err(e) => vec![],
+        Ok(p) => p,
+    };
+
     let scan_result = ScanResultBuilder::default()
         .os_info(os_info)
         .dpkg_binary_packages(dpkg_binary_packages)
         .dpkg_source_packages(dpkg_source_packages)
         .apk_packages(apk_packages)
         .rpm_packages(rpm_packages)
+        .node_packages(node_packages)
         .python_packages(python_packages)
         .build()
         .unwrap();

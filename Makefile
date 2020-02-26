@@ -28,3 +28,8 @@ test-host-python-3.6:
 	cp $(RAKN_BIN) $(HOST_TESTS)/python/3.6/rakn
 	docker build -t python-3.6-test:latest $(HOST_TESTS)/python/3.6/
 	docker run -it python-3.6-test:latest
+
+test-host-nodejs-6:
+	cp $(RAKN_BIN) $(HOST_TESTS)/nodejs/6/rakn
+	docker build -t nodejs-6-test:latest $(HOST_TESTS)/nodejs/6/
+	docker run -it nodejs-6-test:latest
