@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::path::Path;
 use std::{fmt, fs, io};
+use walkdir::DirEntry;
 
 #[derive(Builder, Clone)]
 pub struct AlpineInfo {
@@ -35,6 +36,10 @@ impl fmt::Display for AlpineError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message.as_str())
     }
+}
+
+pub fn is_relevant_file(f: &DirEntry) -> bool {
+    f.file_type().is_file() && f.path().ends_with("/etc/os-release")
 }
 
 pub fn scan(root_dir: &Path) -> Result<AlpineInfo, AlpineError> {

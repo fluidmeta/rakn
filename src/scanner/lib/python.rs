@@ -42,31 +42,36 @@ impl fmt::Display for PythonError {
     }
 }
 
+fn is_py_metadata_file(f: &DirEntry) -> bool {
+    f.path().display().to_string().ends_with(".dist-info/METADATA")
+}
+
+pub fn is_relevant_file(f: &DirEntry) -> bool {
+    f.file_type().is_file() && is_py_metadata_file(f)
+}
+
 pub fn scan(files: &Vec<DirEntry>) -> Result<Vec<PythonPackage>, PythonError> {
     let mut python_packages: Vec<PythonPackage> = vec![];
     let metadata_files: Vec<DirEntry> = files
         .clone()
         .into_iter()
-        .filter(|e| {
-            e.path()
-                .to_str()
-                .map(|s| s.ends_with(".dist-info/METADATA"))
-                .unwrap_or(false)
-        })
+        .filter(|e| is_py_metadata_file(e))
         .collect();
 
     for entry in metadata_files.into_iter() {
-        // parse package version and name
-        let contents = fs::read_to_string(entry.path().to_str().unwrap())?;
-        let (name, version) = parse_py_metadata_file(contents.as_str());
-        python_packages.push(
-            PythonPackageBuilder::default()
-                .name(String::from(name))
-                .version(String::from(version))
-                .lib_path(String::from(entry.path().to_str().unwrap()))
-                .build()
-                .unwrap(),
-        );
+        if entry.file_type().is_file() {
+            // parse package version and name
+            let contents = fs::read_to_string(entry.path().to_str().unwrap())?;
+            let (name, version) = parse_py_metadata_file(contents.as_str());
+            python_packages.push(
+                PythonPackageBuilder::default()
+                    .name(String::from(name))
+                    .version(String::from(version))
+                    .lib_path(String::from(entry.path().to_str().unwrap()))
+                    .build()
+                    .unwrap(),
+            );
+        }
     }
 
     Ok(python_packages)

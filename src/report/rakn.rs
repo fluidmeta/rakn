@@ -68,6 +68,24 @@ pub fn print(report: &ScanResult) -> String {
     }
     result.push_str("\n");
 
+    result.push_str("NodeJS packages\n------\n\n");
+    for p in report.node_packages.iter() {
+        result.push_str(
+            format!(
+                "{} | {}:{}\n",
+                p.get_lib_path(),
+                p.get_name(),
+                p.get_version()
+            )
+                .as_str(),
+        );
+    }
+    result.push_str("\n");
+
     println!("{}", result);
     result
 }
+
+
+
+

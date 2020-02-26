@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rakn | tee /dev/tty | grep "wheel:0.34.2"
+rakn | tee /dev/tty | grep "impacket"

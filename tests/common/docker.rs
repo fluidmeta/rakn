@@ -1,6 +1,8 @@
 use tempdir::TempDir;
 use std::process::Command;
 use walkdir::{WalkDir, DirEntry};
+use rakn::scanner;
+use rakn::util;
 
 pub fn extract_docker_image(image_raw: &str) -> (TempDir, Vec<DirEntry>) {
     assert_eq!(Command::new("docker").args(&[
@@ -15,14 +17,7 @@ pub fn extract_docker_image(image_raw: &str) -> (TempDir, Vec<DirEntry>) {
         .expect("Could not extract image");
 
     let excluded_dirs = vec!["/proc/", "/dev/"];
-    let files_to_scan: Vec<DirEntry> = WalkDir::new(tmp_dir_alloc.path())
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|d| {
-            !excluded_dirs.contains(&d.path().to_str().unwrap())
-        })
-        .filter_map(|v| v.ok())
-        .collect();
+    let files_to_scan = util::get_files_to_scan(tmp_dir_alloc.path(), &excluded_dirs);
 
     (tmp_dir_alloc, files_to_scan)
 }

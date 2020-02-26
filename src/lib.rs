@@ -9,3 +9,4 @@ extern crate tempdir;
 extern crate walkdir;
 
 pub mod scanner;
+pub mod util;

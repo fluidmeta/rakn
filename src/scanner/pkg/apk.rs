@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::path::Path;
 use std::{fmt, fs, io};
+use walkdir::DirEntry;
 
 #[derive(Debug)]
 pub struct ApkError {
@@ -36,6 +37,10 @@ impl ApkPackage {
     pub fn get_version(&self) -> String {
         String::from(self.version.as_str())
     }
+}
+
+pub fn is_relevant_file(f: &DirEntry) -> bool {
+    f.file_type().is_file() && f.path().ends_with("/lib/apk/db/installed")
 }
 
 pub fn scan(root_dir: &Path) -> Result<Vec<ApkPackage>, ApkError> {

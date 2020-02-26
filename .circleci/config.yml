@@ -23,6 +23,9 @@ jobs:
           name: '[host test] python3.6'
           command: 'make test-host-python-3.6'
       - run:
+          name: '[host test] nodejs6'
+          command: 'make test-host-nodejs-6'
+      - run:
           name: '[host test] centos 7'
           command: 'make test-host-centos-7'
       - run:
