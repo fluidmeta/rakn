@@ -59,7 +59,7 @@ pub fn scan(files: &Vec<DirEntry>) -> Result<Vec<NodeJsPackage>, NodeJsError> {
     let metadata_files: Vec<DirEntry> = files
         .clone()
         .into_iter()
-        .filter(|e| is_package_json_file(e))
+        .filter(|e| is_relevant_file(e))
         .collect();
 
     for entry in metadata_files.into_iter() {

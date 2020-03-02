@@ -14,6 +14,7 @@ pub fn get_files_to_scan(root_dir: &Path, excludes: &Vec<&str>) -> Vec<DirEntry>
         .filter(|d|{
             scanner::lib::nodejs::is_relevant_file(d) ||
                 scanner::lib::python::is_relevant_file(d) ||
+                scanner::lib::ruby::is_relevant_file(d) ||
                 scanner::pkg::dpkg::is_relevant_file(d) ||
                 scanner::pkg::apk::is_relevant_file(d) ||
                 scanner::pkg::rpm::is_relevant_file(d) ||
