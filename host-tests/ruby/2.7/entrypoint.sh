@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rakn | tee /dev/tty | grep "request"
+rakn | grep "bundler:2.1.2"
