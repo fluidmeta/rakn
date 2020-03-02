@@ -9,7 +9,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: 'prepare'
+      - name: '[prepare] deps'
+        run: 'apt-get update && apt-get install -y musl-gcc'
+      - name: '[prepare] cargo'
         run: 'rustup target add x86_64-unknown-linux-musl'
       - name: '[cargo] test'
         run: 'make test'

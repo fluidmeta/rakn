@@ -1,6 +1,6 @@
 **Status**
 
-[![CircleCI](https://circleci.com/gh/fishi0x01/rakn/tree/master.svg?style=svg)](https://circleci.com/gh/fishi0x01/rakn/tree/master)
+![CI](https://github.com/fluidmeta/rakn/workflows/CI/badge.svg)
 
 # rakn
 Work in progress ..
