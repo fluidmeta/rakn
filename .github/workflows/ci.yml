@@ -1,0 +1,29 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: '[prepare] deps'
+        run: 'sudo apt-get update && sudo apt-get install -y musl-dev musl-tools'
+      - name: '[prepare] cargo'
+        run: 'rustup target add x86_64-unknown-linux-musl'
+      - name: '[test] cargo'
+        run: 'make test'
+      - name: '[test] debian stretch'
+        run: 'make test-host-debian-stretch'
+      - name: '[test] ubuntu bionic'
+        run: 'make test-host-ubuntu-bionic'
+      - name: '[test] python3.6'
+        run: 'make test-host-python-3.6'
+      - name: '[test] nodejs6'
+        run: 'make test-host-nodejs-6'
+      - name: '[test] centos 7'
+        run: 'make test-host-centos-7'
+      - name: '[test] centos 8'
+        run: 'make test-host-centos-8'

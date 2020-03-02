@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rakn | tee /dev/tty | grep "Release: 7"
+rakn | grep "Release: 7"
