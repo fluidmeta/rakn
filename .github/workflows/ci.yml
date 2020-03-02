@@ -21,6 +21,8 @@ jobs:
         run: 'make test-host-ubuntu-bionic'
       - name: '[test] python3.6'
         run: 'make test-host-python-3.6'
+      - name: '[test] ruby2.7'
+        run: 'make test-host-ruby-2.7'
       - name: '[test] nodejs6'
         run: 'make test-host-nodejs-6'
       - name: '[test] centos 7'

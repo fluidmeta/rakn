@@ -28,6 +28,7 @@ pub struct ScanResult {
     pub rpm_packages: Vec<pkg::rpm::RpmPackage>,
     pub node_packages: Vec<lib::nodejs::NodeJsPackage>,
     pub python_packages: Vec<lib::python::PythonPackage>,
+    pub ruby_packages: Vec<lib::ruby::RubyPackage>
 }
 
 fn main() {
@@ -141,6 +142,12 @@ fn main() {
         Ok(p) => p,
     };
 
+    // get ruby libraries
+    let ruby_packages = match lib::ruby::scan(&files_to_scan) {
+        Err(e) => vec![],
+        Ok(p) => p,
+    };
+
     let scan_result = ScanResultBuilder::default()
         .os_info(os_info)
         .dpkg_binary_packages(dpkg_binary_packages)
@@ -149,6 +156,7 @@ fn main() {
         .rpm_packages(rpm_packages)
         .node_packages(node_packages)
         .python_packages(python_packages)
+        .ruby_packages(ruby_packages)
         .build()
         .unwrap();
 

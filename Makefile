@@ -33,3 +33,8 @@ test-host-nodejs-6:
 	cp $(RAKN_BIN) $(HOST_TESTS)/nodejs/6/rakn
 	docker build -t nodejs-6-test:latest $(HOST_TESTS)/nodejs/6/
 	docker run nodejs-6-test:latest
+
+test-host-ruby-2.7:
+	cp $(RAKN_BIN) $(HOST_TESTS)/ruby/2.7/rakn
+	docker build -t ruby-2.7-test:latest $(HOST_TESTS)/ruby/2.7/
+	docker run ruby-2.7-test:latest
